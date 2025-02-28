@@ -1,20 +1,28 @@
 import { useParams } from "wouter";
 import { motion } from "framer-motion";
-import { useQuery } from "@tanstack/react-query";
 import { algorithms } from "@/lib/algorithms";
 import { AlgorithmVisualizer } from "@/components/AlgorithmVisualizer";
 import { CodeDisplay } from "@/components/CodeDisplay";
 import { AchievementDisplay } from "@/components/AchievementDisplay";
-import { Button } from "@/components/ui/button";
 import { Card } from "@/components/ui/card";
+import { getUserProgress } from "@/lib/userProgress";
+import { useEffect, useState } from "react";
+import type { UserProgress } from "@/lib/achievements";
 
 export default function Algorithm() {
   const { id } = useParams();
   const algorithm = algorithms.find(a => a.id === id);
+  const [progress, setProgress] = useState<UserProgress>(getUserProgress());
 
-  const { data: user } = useQuery({
-    queryKey: ['/api/users/1']
-  });
+  useEffect(() => {
+    // Update progress when localStorage changes
+    const handleStorageChange = () => {
+      setProgress(getUserProgress());
+    };
+
+    window.addEventListener('storage', handleStorageChange);
+    return () => window.removeEventListener('storage', handleStorageChange);
+  }, []);
 
   if (!algorithm) {
     return <div>Algorithm not found</div>;
@@ -70,7 +78,7 @@ export default function Algorithm() {
             animate={{ x: 0, opacity: 1 }}
             transition={{ delay: 0.4 }}
           >
-            {user && <AchievementDisplay userProgress={user.progress} />}
+            <AchievementDisplay userProgress={progress} />
           </motion.div>
         </div>
       </motion.div>

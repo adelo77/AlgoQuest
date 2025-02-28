@@ -2,8 +2,8 @@ import { useState, useEffect } from "react";
 import { motion, AnimatePresence } from "framer-motion";
 import { Button } from "@/components/ui/button";
 import { useToast } from "@/hooks/use-toast";
-import { apiRequest } from "@/lib/queryClient";
 import { checkAchievements } from "@/lib/achievements";
+import { markAlgorithmComplete, addAchievements, getUserProgress } from "@/lib/userProgress";
 import type { Algorithm } from "@/lib/algorithms";
 
 interface AlgorithmVisualizerProps {
@@ -28,48 +28,36 @@ export function AlgorithmVisualizer({ algorithm }: AlgorithmVisualizerProps) {
     setCurrentStep([]);
   };
 
-  const markComplete = async () => {
-    try {
-      const response = await fetch('/api/users/1');
-      const user = await response.json();
+  const markComplete = () => {
+    const updatedProgress = markAlgorithmComplete(algorithm.id);
 
-      const updatedProgress = {
-        ...user.progress,
-        completedAlgorithms: Array.from(new Set([...user.progress.completedAlgorithms, algorithm.id]))
-      };
+    // Check for new achievements
+    const newAchievements = checkAchievements({
+      ...updatedProgress,
+      achievements: updatedProgress.achievements
+    });
 
-      // Check for new achievements
-      const newAchievements = checkAchievements({
-        ...updatedProgress,
-        achievements: user.progress.achievements
-      });
-
-      if (newAchievements.length > 0) {
-        updatedProgress.achievements = [
-          ...user.progress.achievements,
-          ...newAchievements
-        ];
-      }
-
-      await apiRequest('PUT', `/api/users/1/progress`, { progress: updatedProgress });
-
-      toast({
-        title: "Algorithm Completed! 🎉",
-        description: "Great job mastering this algorithm!",
-        duration: 3000,
-      });
-    } catch (error) {
-      console.error('Failed to update progress:', error);
+    if (newAchievements.length > 0) {
+      addAchievements(newAchievements);
     }
+
+    toast({
+      title: "Algorithm Completed! 🎉",
+      description: "Great job mastering this algorithm!",
+      duration: 3000,
+    });
   };
 
   const startVisualization = async () => {
     setSorting(true);
     if (algorithm.id === "bubble-sort") {
       await bubbleSort();
+    } else if (algorithm.id === "quick-sort") {
+      // Quick sort visualization will be implemented later
+      await new Promise(resolve => setTimeout(resolve, 2000));
     }
     setSorting(false);
-    await markComplete();
+    markComplete();
   };
 
   const bubbleSort = async () => {
