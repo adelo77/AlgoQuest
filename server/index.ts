@@ -1,55 +1,43 @@
 import express from "express";
-import { registerRoutes } from "./routes";
-import { setupVite, log } from "./vite";
-import { storage } from "./storage";
+import { log, serveStatic } from "./vite";
+import { createServer } from "http";
+import path from "path";
 
-// Set development mode
-process.env.NODE_ENV = "development";
+// Force production mode for stability
+process.env.NODE_ENV = "production";
+
+log("Starting server in production mode...");
 
 const app = express();
+const server = createServer(app);
 
 // Basic middleware
 app.use(express.json());
 
-// Test endpoint
+// Test endpoint with detailed logging
 app.get('/ping', (_req, res) => {
-  res.json({ status: 'ok' });
   log('Ping endpoint hit successfully');
+  res.json({ status: 'ok' });
 });
 
-
-// Create default user and setup routes
+// Startup procedure
 (async () => {
   try {
-    log("Starting server...");
+    log("Configuring server...");
 
-    // Create default user
-    const defaultUser = await storage.createUser({ username: "default" });
-    log(`Created default user: ${defaultUser.id}`);
+    log("Setting up static file serving...");
+    serveStatic(app);
+    log("Static file serving configured");
 
-    // Setup routes
-    const server = await registerRoutes(app);
-
-    // Error handling middleware
-    app.use((err: any, _req: express.Request, res: express.Response, _next: express.NextFunction) => {
-      const status = err.status || err.statusCode || 500;
-      const message = err.message || "Internal Server Error";
-      log(`Error: ${message}`);
-      res.status(status).json({ message });
-    });
-
-
-    // Setup Vite (development only)
-    await setupVite(app, server);
-
-
-    // Start server
+    // Start server - explicitly binding to 0.0.0.0
     server.listen(5000, "0.0.0.0", () => {
-      log("Server running on port 5000");
+      log("Server successfully started and listening on port 5000");
+      log("Access the application at http://localhost:5000");
     });
 
   } catch (error) {
-    log(`Server failed to start: ${error}`);
+    log(`Failed to start server: ${error}`);
+    console.error("Detailed error:", error);
     process.exit(1);
   }
 })();
