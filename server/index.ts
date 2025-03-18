@@ -2,6 +2,8 @@ import express from "express";
 import { log, serveStatic } from "./vite";
 import { createServer } from "http";
 import path from "path";
+import { exec } from "child_process";
+import { promisify } from "util";
 
 // Force production mode for stability
 process.env.NODE_ENV = "production";
@@ -24,6 +26,12 @@ app.get('/ping', (_req, res) => {
 (async () => {
   try {
     log("Configuring server...");
+
+    // Build client files if needed
+    log("Building client files...");
+    const execPromise = promisify(exec);
+    await execPromise('npm run build');
+    log("Client build completed");
 
     log("Setting up static file serving...");
     serveStatic(app);
