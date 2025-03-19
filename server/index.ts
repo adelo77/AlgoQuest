@@ -1,20 +1,29 @@
 import express from "express";
-import { log, serveStatic } from "./vite";
+import { setupVite, log } from "./vite";
 import { createServer } from "http";
-import path from "path";
-import { exec } from "child_process";
-import { promisify } from "util";
 
-// Force production mode for stability
-process.env.NODE_ENV = "production";
+// Use development mode
+process.env.NODE_ENV = "development";
 
-log("Starting server in production mode...");
+log("Starting server in development mode...");
 
 const app = express();
 const server = createServer(app);
 
 // Basic middleware
 app.use(express.json());
+
+// Debug logging middleware
+app.use((req, _res, next) => {
+  log(`Incoming request: ${req.method} ${req.url}`);
+  next();
+});
+
+// Test root endpoint
+app.get('/', (_req, res) => {
+  log('Root endpoint hit');
+  res.send('Server is running!');
+});
 
 // Test endpoint with detailed logging
 app.get('/ping', (_req, res) => {
@@ -27,15 +36,10 @@ app.get('/ping', (_req, res) => {
   try {
     log("Configuring server...");
 
-    // Build client files if needed
-    log("Building client files...");
-    const execPromise = promisify(exec);
-    await execPromise('npm run build');
-    log("Client build completed");
-
-    log("Setting up static file serving...");
-    serveStatic(app);
-    log("Static file serving configured");
+    // Setup Vite dev server
+    log("Setting up Vite development server...");
+    await setupVite(app, server);
+    log("Vite development server configured");
 
     // Start server - explicitly binding to 0.0.0.0
     server.listen(5000, "0.0.0.0", () => {
