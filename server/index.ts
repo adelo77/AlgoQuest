@@ -19,10 +19,10 @@ app.use((req, _res, next) => {
   next();
 });
 
-// Test root endpoint
-app.get('/', (_req, res) => {
-  log('Root endpoint hit');
-  res.send('Server is running!');
+// Health check endpoint
+app.get('/health', (_req, res) => {
+  log('Health check endpoint hit');
+  res.json({ status: 'healthy' });
 });
 
 // Test endpoint with detailed logging

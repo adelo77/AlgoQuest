@@ -29,9 +29,7 @@ export default function Home() {
               transition={{ delay: index * 0.1 }}
             >
               <Link href={`/algorithm/${algorithm.id}`}>
-                <a>
-                  <AlgorithmCard algorithm={algorithm} />
-                </a>
+                <AlgorithmCard algorithm={algorithm} />
               </Link>
             </motion.div>
           ))}
